@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include "tp-tas.h"
 #include <ctype.h>
+#include <string.h>
 
 
 /*
@@ -64,23 +65,28 @@ void tas_init() {
 int first_fit(unsigned int taille, int* precedent)
 {
 	//TODO: question 2.1 DONE
-	int i = libre, FIN = -1;
+	//i = indice zone actuelle
+	int i;
+	if(*precedent != -1)
+		i = *precedent;
+	else
+		i = 0;
 
 	//Chercher les zones libres
 	while (i < TAILLE_TAS){
 		//alors la zone est libre
-		if (tas[i+1] == -1){
+		if (tas[i + 1] == FIN){
 			//on controle la taille
 			if (tas[i] >= taille){
-				FIN = i;
-				break;
+				return i;
 			}
+			//dans ce cas precedent est la zone actuelle
 			*precedent = i;
 		}
-		i += tas[i] + 1;	
+		i += tas[i] + 1;
 	}
 
-	return FIN;
+	return -1;
 }
 
 /* tas_malloc: alloue une zone libre de taille demandée et renvoie un pointeur vers
@@ -88,32 +94,82 @@ int first_fit(unsigned int taille, int* precedent)
  */
 char* tas_malloc(unsigned int taille)
 {
-	//TODO: question 2.2
-	int index, i;
-	index = first_fit(taille, -1);
+	//TODO: question 2.2 Done
+	int index;
+	index = first_fit(taille, &libre);
 	if (index == -1){
-		fprintf( stderr, "Zone pas trouvee dans %d, %s\n", __LINE__, __FILE__);
+		fprintf( stderr, "Zone pas trouvee dans %d, %s\n", __LINE__, __FUNCTION__);
 		return NULL;
 	}
 	
-	tas[index] = taille;
-	tas[index + 1] = '';
 	//recreer le tas vide correspondant au reste de la zone alouee
-	return index;
+	if (tas[index] > taille + 1){//il nous faut au moins deux cases pour déclarer une zone vide
+		tas[index + taille + 1] = tas[index] - taille - 1;//on déclare la taille de la zone vide
+		tas[index + taille + 2] = -1;//on déclare le début de la zone vide
+	}
+	//allouer la mémoire
+	tas[index] = taille;
+	tas[index + 1] = '\0';
+	return tas + index + 1;
 }
 
-/* tas_free: libère la zone dont le début est désigné par ptr */
+/* tas_free: libère la zone dont le début est désigné par ptr sans espaces contigus*/
 void tas_free(char* ptr)
 {
-	//TODO: question 2.3
+	//TODO: question 2.3 Done
+	int i;
+	*ptr = -1;
+	for (i = 1; i < *ptr; i++){
+		*(ptr + i) = 0;
+	}
+	ptr = NULL;
 	return;
+}
+
+//Le jeu d'essai de la question 2 dans le .txt
+void jeu_essai(){
+	char *p1, *p2, *p3, *p4;
+	tas_init();
+	afficher_tas();
+	p1 = (char *) tas_malloc(10);
+	p2 = (char *) tas_malloc(12);
+	p3 = (char *) tas_malloc(5);
+	afficher_tas();
+	strcpy( p1, "tp 1" );
+	strcpy( p2, "tp 2" );
+	strcpy( p3, "tp 3" );
+	afficher_tas();
+	tas_free( p2 );
+	afficher_tas();
+	p4 = (char *) tas_malloc(9);
+	strcpy( p4, "systeme" );
+	afficher_tas();
+}
+
+void jeu_essai_v2(){
+	char *p1, *p2, *p3, *p4;
+	tas_init();
+	afficher_tas();
+	p1 = (char *) tas_malloc(10);
+	p2 = (char *) tas_malloc(12);
+	p3 = (char *) tas_malloc(5);
+	afficher_tas();
+	strcpy( p1, "tp 1" );
+	strcpy( p2, "tp 2" );
+	strcpy( p3, "tp 3" );
+	afficher_tas();
+	tas_free_v2(p2, &libre);
+	tas_free_v2(p3, &libre);
+	afficher_tas();
+	p4 = (char *) tas_malloc(9);
+	strcpy( p4, "systeme" );
+	afficher_tas();
 }
 
 
 int main(int argc, char* argv[])
 {
-	tas_init();
-	afficher_tas();
 	// TODO: Appelez vos fonctions ici (tests et question 2.4)
+	jeu_essai_v2();
 	return 0;
 }
